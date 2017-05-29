@@ -8,11 +8,11 @@ class Order
 	protected $items;
 	protected $total;
 
-	function __construct($id,Costumer $costumer, $items, $total)
+	function __construct($id, Customer $customer, $products, $total)
 	{
 		$this->id = $id;
-		$this->costumer = $costumer;
-		$this->items = $items;
+		$this->customer = $customer;
+		$this->products = $products;
 		$this->total = $total;
 	}
 

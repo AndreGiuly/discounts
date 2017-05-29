@@ -16,7 +16,7 @@ class Product implements JsonSerializable
 		$this->price = $price;
 	}
 
-	public function getCategory(){
+	public function category(){
 		return $this->category;
 	}
 
@@ -28,17 +28,21 @@ class Product implements JsonSerializable
         return $this->array;
     }
 
+
 	public static function getJson($path,$categories){
 		$products = json_decode(file_get_contents($path));
 
 		foreach ($products as $key => $product) {
 			foreach ($categories as $key => $category) {
-				if($category->getId() -> $product->category){
-					return $category;
+			
+				if($category->getId() == $product->category){
+					$product_cat =  $category;
+
 				}
 			}
 			
-			$list[] = new Product($product->id, $product->name, $category, $product->price);
+			
+			$list[] = new Product($product->id, $product->name, $product_cat, $product->price);
 		}
 
 		return $list;

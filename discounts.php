@@ -6,23 +6,41 @@ spl_autoload_register(function ($class_name) {
 });
 
 
+	//prepare data
+	$categories = Category::getJson('Data/categories.json');
+	$customers = Customer::getJson('Data/customers.json');
+	$products = Product::getJson('Data/products.json',$categories);
+
+	
+	$customer = Customer::getCostumerById($customers,1);
 
 
 
 
-
-$category = new Category('1','Roupa');
-
-$prod[] = new Product('1','Calças',$category,'10£');
-
-$prod[] = new Product('2','T-shirt',$category,'5s£');
+if(isset($_POST)){
 
 
-$cost1 = new Costumer('1','André');
+	//store order
+	$info = pathinfo($_FILES['file']['name']);
+	$ext = $info['extension']; // get the extension of the file
+	$target = 'Data/orders/'.$_FILES['file']['name'];
+	move_uploaded_file( $_FILES['file']['tmp_name'], $target);
 
-$ordem = new Order('1',$cost1,$prod,'20.00');
-echo '<pre>';
-print_r($ordem);
 
+	$order = json_decode(file_get_contents('Data/orders/'.$_FILES['file']['name']));
+
+	echo '<pre>';
+	//var_dump($order);
+//	var_dump($order->{'customer-id'});
+	$customer = Customer::getCostumerById($customers,$order->{'customer-id'});
+//	var_dump($customer);
+	$order1 = new Order($order->id,$customer,1,$total);
+	var_dump($order1);
+
+
+
+} else {
+	echo 'NOT';
+}
 
  ?>
