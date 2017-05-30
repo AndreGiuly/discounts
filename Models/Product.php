@@ -4,14 +4,14 @@ class Product implements JsonSerializable
 {
 	
 	protected $id;
-	protected $name;
+	protected $description;
 	protected $category;
 	protected $price;
 
-	function __construct($id,$name, Category $category, $price)
+	function __construct($id,$description, Category $category, $price)
 	{
 		$this->id = $id;
-		$this->name = $name;
+		$this->description = $description;
 		$this->category = $category;
 		$this->price = $price;
 	}
@@ -42,9 +42,22 @@ class Product implements JsonSerializable
 			}
 			
 			
-			$list[] = new Product($product->id, $product->name, $product_cat, $product->price);
+			$list[] = new Product($product->id, $product->description, $product_cat, $product->price);
 		}
 
 		return $list;
 	}	
+
+	public static function getProductById($list,$id){
+		foreach ($list as $product) {
+			if($product->getId() == $id){
+				
+				return $product;
+			}
+		}
+
+	}
+
+
+
 }

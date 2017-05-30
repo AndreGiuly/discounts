@@ -4,8 +4,8 @@ class Order
 {
 	
 	protected $id;
-	protected $costumer;
-	protected $items;
+	protected $customer;
+	protected $products;
 	protected $total;
 
 	function __construct($id, Customer $customer, $products, $total)

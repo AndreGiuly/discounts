@@ -1,5 +1,7 @@
 <?php 
-
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 spl_autoload_register(function ($class_name) {
     include 'Models/'.$class_name . '.php';
@@ -33,11 +35,24 @@ if(isset($_POST)){
 	//var_dump($order);
 //	var_dump($order->{'customer-id'});
 	$customer = Customer::getCostumerById($customers,$order->{'customer-id'});
+
+
+	foreach ($order->items as $key => $product) {
+		$order_items[] = Product::getProductById($products,$product->{'product-id'});
+		//$category = Category::getgetCategoryById();
+		//$order_items[] = new Product($product->{'product-id'},$product->quantity, $category, $product->price);
+		# code...
+	}
+
+
+
 //	var_dump($customer);
-	$order1 = new Order($order->id,$customer,1,$total);
+	$order1 = new Order($order->id,$customer,$order_items,$order->total);
+	//var_dump($order1);
 	var_dump($order1);
-
-
+	die();
+		
+		
 
 } else {
 	echo 'NOT';
