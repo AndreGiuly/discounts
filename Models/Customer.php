@@ -16,10 +16,42 @@ class Customer {
 		
 		$this->revenue = $revenue;
 	}
+
 	public function getId(){
 		return $this->id;
 	}
 
+	public function getName(){
+		return $this->name;
+	}
+
+	public function getList(){
+		return self::$list;
+	}
+
+	public function getRevenue(){
+		return $this->revenue;
+	}
+
+	public function setId($id){
+		$this->id = $id;
+		return $this;
+	}
+
+	public function setName($name){
+		$this->name = $name;
+		return $this;
+	}
+
+	public function setList($list){
+		self::$list = $list;
+		return $this;
+	}
+
+	public function setRevenue($revenue){
+		$this->revenue = $revenue;
+		return $this;
+	}
 	public static function getJson($path){
 		$customers = json_decode(file_get_contents($path));
 		

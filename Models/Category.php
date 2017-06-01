@@ -25,12 +25,14 @@ class Category implements JsonSerializable
 		return $list;
 	}	
 
-	public function jsonSerialize() {
-        return $this->array;
-    }
+
 
 	public function getId(){
 		return $this->id;
+	}
+
+	public function getDescription(){
+		return $this->description;
 	}
 
 	public function getList(){
@@ -44,4 +46,24 @@ class Category implements JsonSerializable
 		}
 		return null;
 	}
+
+
+	public function setId($id){
+		$this->id = $id;
+		return $this;
+	}
+
+	public function setDescription($description){
+		$this->description = $description;
+		return $this;
+	}
+
+	public function setList($list){
+		self::$list = $list;
+		return $this;
+	}
+
+	public function jsonSerialize() {
+        return $this->array;
+    }
 }
