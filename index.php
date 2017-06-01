@@ -15,11 +15,11 @@ spl_autoload_register(function ($class_name) {
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Document</title>
+	<title>ORDER</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 </head>
 <body>
-
+<div class="container">
 <?php
 	//Show server responses 
 	if(isset($_GET['e'])){
@@ -59,7 +59,7 @@ spl_autoload_register(function ($class_name) {
 			break;
 		}
 	} ?>
-
+</div>
 
 	<div class="container">
 		<div class="row">
@@ -74,14 +74,12 @@ spl_autoload_register(function ($class_name) {
 
 
 
-				<select name="" id="">
-					<option value="1">Product</option>
+				<select name="" id="products">
+					<option value="0">Select Product</option>
 				</select>
 
-				<select name="" id="">
-					<option value="">Quantity</option>
-				</select>
-				<button>Add to Order</button>
+				<input type="number" id="qtt" placeholder="quantity">
+				<button id="addorder-btn">Add to Order</button>
 				<h3>Order Items:</h3>
 					<table class="table table-condensed">
 					    <thead>
@@ -99,7 +97,9 @@ spl_autoload_register(function ($class_name) {
 					     
 					      
 					    </tbody>
+
 					  </table>
+					  <p>Total: <span id="totalPrice">0</span></p>
 				</div>
 				<input type="submit">
 			</form>
@@ -113,14 +113,78 @@ spl_autoload_register(function ($class_name) {
 <script>
 $(document).ready(function(){
 
-    function deleteRow()
-    {
-        row.closest('tr').remove();
+	var deleteItems = new Array();
+
+	$.getJSON("Data/products.json",function(data){
+        	content = '';
+        $.each(data, function(i,product){
+        	content += '<option value=' + product.id+'>' + product.description + '</option>';
+        });
+
+        $(content).appendTo("#products");
+    });
+
+	//We need to be able to remove a product from the order
+	$(document).on('click', 'button.removebutton', function () { 
+	    productID = $(this).closest('tr').find('.productID').text();
+	    quantity  = $(this).closest('tr').find('.qtt').text();
+	    price     = parseFloat($(this).closest('tr').find('.price').text());
+		
+		deleteItems[productID] = quantity;
+
+		totalPrice = parseFloat($('#totalPrice').html());
+		newTotal = (totalPrice-price).toFixed(2);
+		$('#totalPrice').html(newTotal);
 
 
-    }
+	    $(this).closest('tr').remove();
+	    
+	    return false;
+	});
+		
+	function addItem(id,quantity){
 
-    /***************** Get Info from Json file *************/
+    	$.getJSON("Data/products.json",function(data){
+    		totalPrice = parseFloat($('#totalPrice').html());
+	        $.each(data, function(i,product){
+	    		if(product['id'] == id){
+
+	    			price = (product['price']*quantity).toFixed(2);
+	    			totalPrice += parseFloat(price);
+
+	    			content = '<tr>';
+					content += '<td class="productID">' + product['id'] + '</td>';
+					content += '<td>' + product['description'] + '</td>';
+					content += '<td>' + product['category'] + '</td>';
+					content += '<td>' + product['price'] + '</td>';
+					content += '<td class="qtt">' + quantity + '</td>';
+					content += '<td class="price">' + price + '</td>';
+					content += '<td><button type="button" class="btn btn-danger btn-xs removebutton">DELETE</button></td>';
+					content += '<tr/>';
+					$(content).appendTo("#posts");
+	    		}  		
+	        });
+	        
+	        $('#totalPrice').html(totalPrice.toFixed(2));
+	    }); 
+ 
+	}
+
+	//add an additional product to the order
+	$('#addorder-btn').click(function(e){
+		e.preventDefault();
+		productID = $('#products').val();
+		quantity = $('#qtt').val();
+		
+		if(productID != 0 && quantity > 0){
+			addItem(productID,quantity);
+		} else {
+			
+			alert('Check inputs.');
+		}
+	})
+
+	//get Json uploaded info
     $("#json_file").on("change", function (changeEvent) {
     	$('.table td').remove();
     	$('#errorMsg').hide();
@@ -152,26 +216,10 @@ $(document).ready(function(){
                         	$('#customer').html(json['customer-id']);
 
                         	$.each(json.items, function(i,item){
-					        	$.getJSON("Data/products.json",function(data){
-							        $.each(data, function(i,product){
-							    		if(product['id'] == item['product-id']){
-							    			content = '<tr>';
-											content += '<td>' + product['id'] + '</td>';
-											content += '<td>' + product['description'] + '</td>';
-											content += '<td>' + product['category'] + '</td>';
-											content += '<td>' + product['id'] + '</td>';
-											content += '<td>' + item.quantity + '</td>';
-											content += '<td>' + item.total + '</td>';
-											content += '<td><button type="button" class="btn btn-danger btn-xs" onclick ="deleteRow()">DELETE</button></td>';
-											content += '<tr/>';
-											$(content).appendTo("#posts");
-							    		}  		
-							        });
-							    }); 
-					        });
+                        		addItem(item['product-id'],item['quantity']);
+                        	});
 
-                      
-                   
+                                      
                     } else {
                         $("#errorMsg").show();
                     }
