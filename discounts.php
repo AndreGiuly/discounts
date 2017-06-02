@@ -15,41 +15,30 @@ spl_autoload_register(function ($class_name) {
 
 
 if(isset($_POST)){
-	
-
-	if(isset($_FILES['file'])){
-		
-			$info   = pathinfo($_FILES['file']['name']);
-			$ext    = $info['extension']; // get the extension of the file
-	
-		if($ext == 'json'){
-			
-
-				$target = 'Data/orders/'.$_FILES['file']['name'];
-				move_uploaded_file( $_FILES['file']['tmp_name'], $target);
 
 
-				$order       = json_decode(file_get_contents('Data/orders/'.$_FILES['file']['name']));
+				$order = $_POST;
 
 				if(is_null($order)){
 					header('Location: index.php?e=400');
 				}
 				
-				$customer    = Customer::getCostumerById($customers,$order->{'customer-id'});
+				$customer    = Customer::getCostumerById($customers,$order['customer-id']);
 			
-
+			
 				$order_items = [];
 				$bonus       = [];
 
 
-				foreach ($order->items as $key => $product) {
-					$order_item = Product::getProductById($products,$product->{'product-id'});
-					$order_item->setQuantity($product->quantity);
+				foreach ($order['items'] as $key => $product) {
+					$order_item = Product::getProductById($products,$product['id']);
+					$order_item->setQuantity($product['quantity']);
+						echo '<pre>';
 					array_push($order_items, $order_item);
 				}
-				
-				$order = new Order($order->id,$customer,$order_items,$order->total);
+				$order = new Order($order['id'],$customer,$order_items,$order['total']);
 	
+			
 
 				//A customer who has already bought for over € 1000, gets a discount of 10% on the whole order.
 				if($order->getCustomer()->getRevenue() > 1000){
@@ -58,7 +47,7 @@ if(isset($_POST)){
 
 					$newTotal = round($lastTotal - ($lastTotal * $discount),2);
 					$order->setTotal($newTotal);
-					array_push($bonus, '> 1000€ of revenue');
+					array_push($bonus, '> 1000 euros of revenue');
 				}
 
 
@@ -115,16 +104,12 @@ if(isset($_POST)){
 					array_push($bonus,'Get 20% discount on '.$cheapestProduct->getDescription().' for buy '.$quantity.' Tools');
 
 				}
-
-				echo '<pre>';
-				print_r($bonus);
-				return $bonus;
+					$bonus['total'] = $order->getTotal();
+				echo json_encode($bonus);
 			
 			
-		} else {
-		header('Location: index.php?e=422');
-	}
-	} 
+		
+	
 } else {
 	header('Location: index.php?e=405');	
 }

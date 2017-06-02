@@ -101,7 +101,7 @@ spl_autoload_register(function ($class_name) {
 					  </table>
 					  <p>Total: <span id="totalPrice">0</span></p>
 				</div>
-				<input type="submit">
+				<input type="submit" id="submitOrder">
 			</form>
 		</div>
 	</div>
@@ -114,6 +114,7 @@ spl_autoload_register(function ($class_name) {
 $(document).ready(function(){
 
 	var deleteItems = new Array();
+	var orderItems = new Array();
 
 	$.getJSON("Data/products.json",function(data){
         	content = '';
@@ -142,6 +143,7 @@ $(document).ready(function(){
 	    return false;
 	});
 		
+		
 	function addItem(id,quantity){
 
     	$.getJSON("Data/products.json",function(data){
@@ -151,6 +153,7 @@ $(document).ready(function(){
 
 	    			price = (product['price']*quantity).toFixed(2);
 	    			totalPrice += parseFloat(price);
+	    			
 
 	    			content = '<tr>';
 					content += '<td class="productID">' + product['id'] + '</td>';
@@ -162,12 +165,70 @@ $(document).ready(function(){
 					content += '<td><button type="button" class="btn btn-danger btn-xs removebutton">DELETE</button></td>';
 					content += '<tr/>';
 					$(content).appendTo("#posts");
-	    		}  		
+
+					product['quantity'] = quantity;
+					
+				    orderItems.push(product);
+					
+
+				}
+					    		
+
 	        });
 	        
 	        $('#totalPrice').html(totalPrice.toFixed(2));
 	    }); 
  
+	}
+
+	$('#submitOrder').click(function(e){
+		e.preventDefault();
+
+		id = $('#orderID').html();
+		customer = $('#customer').html();
+		total = $('#totalPrice').html();
+		console.log(orderItems);
+
+		buildJsonOrder(id,customer,orderItems,total);
+	});
+
+
+	function buildJsonOrder(id,customer,items,total){
+		
+		/*var array_order = {};
+	    array_order["id"] = id;
+	    array_order["customer-id"] = customer;
+	    array_order["items"] = items;
+	    array_order["total"] = total;
+*/
+
+	    var json_order = new Object();
+	    	json_order.id = id;
+	    	json_order['customer-id'] = customer;
+	    	json_order.items = items;
+	    	json_order.total = total;
+
+	    var order = JSON.parse(JSON.stringify(json_order));
+
+        $.ajax({
+
+            type: 'POST',
+            url: 'discounts.php',
+            data: order,
+            dataType: 'JSON',
+
+            success: function (success) {    
+                console.log(JSON.parse(success));
+            },
+
+            error: function (response) {
+                console.log(response);
+            }
+
+        });
+	    
+
+
 	}
 
 	//add an additional product to the order
@@ -183,6 +244,8 @@ $(document).ready(function(){
 			alert('Check inputs.');
 		}
 	})
+	  
+
 
 	//get Json uploaded info
     $("#json_file").on("change", function (changeEvent) {
