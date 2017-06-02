@@ -16,96 +16,101 @@ spl_autoload_register(function ($class_name) {
 
 if(isset($_POST)){
 
+	$order = $_POST;
 
-				$order = $_POST;
-
-				if(is_null($order)){
-					header('Location: index.php?e=400');
-				}
-				
-				$customer    = Customer::getCostumerById($customers,$order['customer-id']);
-			
-			
-				$order_items = [];
-				$bonus       = [];
-
-
-				foreach ($order['items'] as $key => $product) {
-					$order_item = Product::getProductById($products,$product['id']);
-					$order_item->setQuantity($product['quantity']);
-						echo '<pre>';
-					array_push($order_items, $order_item);
-				}
-				$order = new Order($order['id'],$customer,$order_items,$order['total']);
+	if(is_null($order)){
+		header('Location: index.php?e=400');
+	}
 	
+	$customer    = Customer::getCostumerById($customers,$order['customer-id']);
+
+
+	$order_items = [];
+	$bonus       = [];
+
+	foreach ($order['items'] as $key => $product) {
+		$order_item = Product::getProductById($products,$product['id']);
+		$order_item->setQuantity($product['quantity']);
 			
+		array_push($order_items, $order_item);
+	}
+	$order = new Order($order['id'],$customer,$order_items,$order['total']);
 
-				//A customer who has already bought for over € 1000, gets a discount of 10% on the whole order.
-				if($order->getCustomer()->getRevenue() > 1000){
-					$lastTotal = (float)$order->getTotal();
-					$discount = 0.1;
+	//A customer who has already bought for over € 1000, gets a discount of 10% on the whole order.
+	if($order->getCustomer()->getRevenue() > 1000){
+		$lastTotal = (float)$order->getTotal();
+		$discount = 0.1;
 
-					$newTotal = round($lastTotal - ($lastTotal * $discount),2);
-					$order->setTotal($newTotal);
-					array_push($bonus, '> 1000 euros of revenue');
+		$newTotal = round($lastTotal - ($lastTotal * $discount),2);
+		$order->setTotal($newTotal);
+		
+		$bonus[]['msg'] = 'You have 10% discount for already spended more than 1000€';
+	}
+
+
+	//For every products of category "Switches" (id 2), when you buy five, you get a sixth for free.
+	foreach ($order->getProducts() as $product) {
+		
+		if((int)$product->getCategory()->getId() === 2){
+			if($product->getQuantity() >= 5){
+				$quantity = $product->getQuantity();
+				$extra = 0;
+
+				for ($i=1; $i <= $product->getQuantity(); $i += 5) { 
+					$extra++;
 				}
 
+				//$product->setQuantity($quantity + $extra);
+				$bonus['extra_product'] = $product->getId();
+				$bonus['new_quantity'] = $product->getQuantity();
+				$bonus[]['msg'] = 'You have got '.$extra.' extra '.$product->getDescription().' for buying '.$quantity.' of this';
+				
+			}
+		}
+	}
 
-				//For every products of category "Switches" (id 2), when you buy five, you get a sixth for free.
-				foreach ($order->getProducts() as $product) {
-					
-					if((int)$product->getCategory()->getId() === 2){
-						if($product->getQuantity() >= 5){
-							$quantity = $product->getQuantity();
-							$extra = 0;
+	//If you buy two or more products of category "Tools" (id 1), you get a 20% discount on the cheapest product.
+	$quantity = 0;
 
-							for ($i=1; $i <= $product->getQuantity(); $i += 5) { 
-								$extra++;
-							}
+	//check quantity products of category "Tools"
+	foreach ($order->getProducts() as $product) {
+	
+		if((int)$product->getCategory()->getId() === 1){
+			$quantity = $product->getQuantity();
+		}
+	}
+	
 
-							$product->setQuantity($quantity + $extra);
-							array_push($bonus,'Bought '.$quantity.' of '.$product->getDescription());
-						}
-					}
-				}
+	
+	if($quantity >= 2){
+		//set an index value;
+		$cheapest = (float)$order->getProducts()[0]->getPrice();
 
-				//If you buy two or more products of category "Tools" (id 1), you get a 20% discount on the cheapest product.
-				$quantity = 0;
+		foreach ($order->getProducts() as $product) {
+			if((float)$product->getPrice() <= $cheapest){
+				$cheapest = $product->getPrice();
+				$productID = $product->getId();
+			}
 
-				//check quantity products of category "Tools"
-				foreach ($order->getProducts() as $product) {
-					if((int)$product->getCategory()->getId() === 1){
-						$quantity++;
-					}
-				}
+		}
+		//get cheapest Product
+		$cheapestProduct = Product::getProductById($products,$productID);
 
+		//discount
+		$discount = 0.2;
 
-				if($quantity >= 2){
-					//set an index value;
-					$cheapest = (float)$order->getProducts()[0]->getPrice();
+		//calc discount on total
+		$lastPrice = (float)$cheapestProduct->getPrice()*(int)$cheapestProduct->getQuantity();
+		$discount = round( ($lastPrice * $discount ),2);
+		$order->setTotal($order->getTotal() - $discount);
+		$bonus[]['msg'] = 'For having bought '.$quantity.' tools, you\'ve got 20% discount on yout cheapest item: '.$cheapestProduct->getDescription();
 
-					foreach ($order->getProducts() as $product) {
-						if((float)$product->getPrice() <= $cheapest){
-							$cheapest = $product->getPrice();
-							$productID = $product->getId();
-						}
+	}
+		
+		$bonus['total'] = $order->getTotal();
 
-					}
-					//get cheapest Product
-					$cheapestProduct = Product::getProductById($products,$productID);
-
-					//discount
-					$discount = 0.2;
-
-					//set new price
-					$lastPrice = (float)$cheapestProduct->getPrice();
-					$newPrice = round($lastPrice - ($lastPrice * $discount),2);
-					$cheapestProduct->setPrice($newPrice);
-					array_push($bonus,'Get 20% discount on '.$cheapestProduct->getDescription().' for buy '.$quantity.' Tools');
-
-				}
-					$bonus['total'] = $order->getTotal();
-				echo json_encode($bonus);
+		//return the bonus :)
+		echo json_encode($bonus);
 			
 			
 		

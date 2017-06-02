@@ -20,26 +20,12 @@ spl_autoload_register(function ($class_name) {
 </head>
 <body>
 <div class="container">
+
 <?php
 	//Show server responses 
 	if(isset($_GET['e'])){
 		switch ($_GET['e']) {
-			case '422': ?>
 
-				<div class="alert alert-danger alert-dismissable">
-					<a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
-					<strong>Error!</strong> Please upload a valid JSON order.
-				</div>
-			<?php
-			break;
-			case '400': ?>
-
-				<div class="alert alert-danger alert-dismissable">
-					<a href="#" class="close" data-dismiss="alert" aria-label="close">×</a>
-					<strong>Error!</strong> JSON file is not readable.
-				</div>
-			<?php 
-			break;
 			case '405': ?>
 
 				<div class="alert alert-danger alert-dismissable">
@@ -59,18 +45,24 @@ spl_autoload_register(function ($class_name) {
 			break;
 		}
 	} ?>
-</div>
 
+
+
+
+</div>
 	<div class="container">
+<h1>Discount Application</h1>
+<hr>
+
 		<div class="row">
 			<form action="discounts.php" method="post" enctype='multipart/form-data'>
-				<div class="col-xs-12">
+				<div class="col-xs-12" style="padding: 20px">
 					<input type="file" name="file" id="json_file">
 					<p id="errorMsg" class="text-danger" style="display: none">File is not a valid JSON!</p>
 				</div>
 				<div>
-				<p>Order ID: <span id="orderID"></span></p>
-				<p>customer: <span id="customer"></span></p>
+				<p><strong>Order ID: </strong><span id="orderID"></span></p>
+				<p><strong>customer: </strong><span id="customer"></span></p>
 
 
 
@@ -89,6 +81,7 @@ spl_autoload_register(function ($class_name) {
 					        <th>Category</th>
 					        <th>Unit Price</th>
 					        <th>Qtt</th>
+					     
 					        <th>Total</th>
 					        <th>Actions</th>
 					      </tr>
@@ -99,9 +92,12 @@ spl_autoload_register(function ($class_name) {
 					    </tbody>
 
 					  </table>
-					  <p>Total: <span id="totalPrice">0</span></p>
+					  <p id="discountMsgs" style="border: 2px solid yellow;"></p>
+					  <p id="total" style="display: none">Total: <span id="totalPrice">0</span> €</p>
 				</div>
-				<input type="submit" id="submitOrder">
+				<input class="btn btn-success" type="submit" id="submitOrder" value="CHECK TOTAL">
+				<input class="btn btn-primary" style="display:none" id="back" value="INSERT NEW ORDER">
+				<p id="submitMsg" style="display: none"></p>
 			</form>
 		</div>
 	</div>
@@ -113,7 +109,6 @@ spl_autoload_register(function ($class_name) {
 <script>
 $(document).ready(function(){
 
-	var deleteItems = new Array();
 	var orderItems = new Array();
 
 	$.getJSON("Data/products.json",function(data){
@@ -131,7 +126,18 @@ $(document).ready(function(){
 	    quantity  = $(this).closest('tr').find('.qtt').text();
 	    price     = parseFloat($(this).closest('tr').find('.price').text());
 		
-		deleteItems[productID] = quantity;
+	
+
+		$.each(orderItems, function(i,item){
+			console.log(productID);
+			if(item.id == productID){
+				index = i
+			}
+			
+    	});	
+		orderItems.splice(index,1);
+
+    	
 
 		totalPrice = parseFloat($('#totalPrice').html());
 		newTotal = (totalPrice-price).toFixed(2);
@@ -142,26 +148,29 @@ $(document).ready(function(){
 	    
 	    return false;
 	});
-		
-		
-	function addItem(id,quantity){
 
+
+	function addItem(id,quantity){
+    	
     	$.getJSON("Data/products.json",function(data){
+    		
     		totalPrice = parseFloat($('#totalPrice').html());
+	        
 	        $.each(data, function(i,product){
+
 	    		if(product['id'] == id){
 
 	    			price = (product['price']*quantity).toFixed(2);
-	    			totalPrice += parseFloat(price);
-	    			
+	    			totalPrice += parseFloat(price);    		
 
 	    			content = '<tr>';
 					content += '<td class="productID">' + product['id'] + '</td>';
 					content += '<td>' + product['description'] + '</td>';
 					content += '<td>' + product['category'] + '</td>';
-					content += '<td>' + product['price'] + '</td>';
+					content += '<td>' + product['price'] + '€</td>';
 					content += '<td class="qtt">' + quantity + '</td>';
-					content += '<td class="price">' + price + '</td>';
+					
+					content += '<td class="price">' + price + '€</td>';
 					content += '<td><button type="button" class="btn btn-danger btn-xs removebutton">DELETE</button></td>';
 					content += '<tr/>';
 					$(content).appendTo("#posts");
@@ -184,29 +193,42 @@ $(document).ready(function(){
 	$('#submitOrder').click(function(e){
 		e.preventDefault();
 
+		if($('#json_file').val() == ""){
+			$('#submitMsg').html('Upload a JSON order!').addClass('text-danger').fadeIn();
+			return false;
+		}
+
+		
+
 		id = $('#orderID').html();
 		customer = $('#customer').html();
 		total = $('#totalPrice').html();
-		console.log(orderItems);
 
-		buildJsonOrder(id,customer,orderItems,total);
+		if(orderItems.length > 0) {
+			$('#submitMsg').hide();
+			
+			buildJsonOrder(id,customer,orderItems,total);
+			$('#submitOrder').hide();
+			$('#back').fadeIn();
+		} else {
+			$('#submitMsg').html('Upload a JSON order!').addClass('text-danger').fadeIn();
+	
+		}
 	});
 
+	$('#back').click(function(){
+		location.reload();
+	});
 
 	function buildJsonOrder(id,customer,items,total){
-		
-		/*var array_order = {};
-	    array_order["id"] = id;
-	    array_order["customer-id"] = customer;
-	    array_order["items"] = items;
-	    array_order["total"] = total;
-*/
+			
 
 	    var json_order = new Object();
 	    	json_order.id = id;
 	    	json_order['customer-id'] = customer;
 	    	json_order.items = items;
 	    	json_order.total = total;
+
 
 	    var order = JSON.parse(JSON.stringify(json_order));
 
@@ -217,8 +239,31 @@ $(document).ready(function(){
             data: order,
             dataType: 'JSON',
 
-            success: function (success) {    
-                console.log(JSON.parse(success));
+            success: function (response) {  
+
+            	msgs = new Array;
+
+            	$.each(response, function(i,item){
+
+            		msgs.push(item.msg);
+            	});
+            	content = $('#discountMsgs').html();
+
+            	$.each(msgs, function(i,msg){
+            		if(msg != null){
+			            	content += msg + '<br>';
+			            }
+            		
+            	});
+            	
+            	$('#discountMsgs').html(content);
+            	
+            	total = response.total;
+           		
+            	//$('#discountMsgs').html(msg);
+            	$('#totalPrice').html(total);
+            	$('#total').fadeIn();
+			
             },
 
             error: function (response) {
@@ -231,7 +276,7 @@ $(document).ready(function(){
 
 	}
 
-	//add an additional product to the order
+	//add product to the order
 	$('#addorder-btn').click(function(e){
 		e.preventDefault();
 		productID = $('#products').val();
@@ -241,7 +286,7 @@ $(document).ready(function(){
 			addItem(productID,quantity);
 		} else {
 			
-			alert('Check inputs.');
+			alert('Check your inputs.');
 		}
 	})
 	  
@@ -262,7 +307,6 @@ $(document).ready(function(){
                         alert("Error while reading file " + file.name + ": " + loadEvent.target.error);
                         return;
                     }
-                    //console.log(loadEvent.target.result);
 
                     var json = loadEvent.target.result;
                     if (/^[\],:{}\s]*$/.test(json.replace(/\\["\\\/bfnrtu]/g, '@').replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
@@ -271,13 +315,15 @@ $(document).ready(function(){
                             json = $.parseJSON(json);
                             id = json['id'];
                             order = json['items'];
+
                         } catch (err) {
                             console.log(err.message);
+                        	$('#submitMsg').html('Error loading order!').addClass('text-danger').fadeIn();
                         }
                         	
                         	$('#orderID').html(json.id);
                         	$('#customer').html(json['customer-id']);
-
+        	             	$('#submitMsg').html('Order loaded!').addClass('text-success').fadeIn();
                         	$.each(json.items, function(i,item){
                         		addItem(item['product-id'],item['quantity']);
                         	});
