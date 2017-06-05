@@ -72,15 +72,15 @@ if(isset($_POST)){
 	//If you buy two or more products of category "Tools" (id 1), you get a 20% discount on the cheapest product.
 	$quantity = 0;
 
+
 	//check quantity products of category "Tools"
 	foreach ($order->getProducts() as $product) {
 	
-		if((int)$product->getCategory()->getId() === 1){
-			$quantity = $product->getQuantity();
+		if((int)$product->getCategory()->getId() == 1){
+			$quantity += (int)$product->getQuantity();
+			
 		}
 	}
-	
-
 	
 	if($quantity >= 2){
 		//set an index value;
